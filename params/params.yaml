@@ -1,0 +1,15 @@
+TRAIN_FILE_PATH: "data/news_train.csv"
+VAL_FILE_PATH: "data/news_test.csv"
+TEST_FILE_PATH: "data/news_test.csv"
+MAX_LENGTH: 256
+TRAIN_BATCH_SIZE: 16
+EVAL_BATCH_SIZE: 32
+LEARNING_RATE: 2.0e-5
+EPOCHS: 3
+OUTPUT_DIR: "checkpoints/transformer"
+
+MODEL_NAME: "bert-base-chinese"
+WEIGHT_DECAY: 0.01
+WARMUP_RATIO: 0.1
+DROPOUT_PROB: 0.1
+FREEZE_ENCODER: false
