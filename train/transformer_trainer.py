@@ -16,11 +16,13 @@ import sys
 sys.path.append("..")
 from models.transformer_classifier import TransformerClassifier
 from utils.train_config import get_config
-from utils.data_loader import *
+from utils.data_loader import build_label_mapping, load_dataframe, prepare_dataloader
 from utils.evaluate import evaluate
 from utils.device import to_device
+from utils.wraps import save_logger
 
 
+@save_logger
 @logger.catch
 def train(config_path: str | Path = "params/params.yaml"):
     root_dir = Path(__file__).resolve().parents[1]
@@ -64,6 +66,10 @@ def train(config_path: str | Path = "params/params.yaml"):
         dropout_prob=config.dropout_prob,
         freeze_encoder=config.freeze_encoder,
     ).to(device)
+    
+    logger.info(f"模型形状: {model}")
+    logger.info(f"模型参数总量: {sum(p.numel() for p in model.parameters())}")
+    logger.info(f"训练设备: {device}")
 
     optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     total_steps = len(train_loader) * config.epochs
@@ -124,8 +130,11 @@ def train(config_path: str | Path = "params/params.yaml"):
     tokenizer.save_pretrained(output_dir / "tokenizer")
     with open(output_dir / "label_mapping.json", "w", encoding="utf-8") as file:
         json.dump({"label2id": label2id, "id2label": id2label}, file, ensure_ascii=False, indent=2)
+        
+    with open(output_dir / "config_snapshot.json", "w", encoding="utf-8") as file:
+        json.dump(config.__dict__, file, ensure_ascii=False, indent=2)
 
-    logger.info(f"最佳模型与映射已保存到: {output_dir}")
+    logger.info(f"Transformer {config.model_name} 训练完成，模型已保存到: {output_dir}")
 
 
 if __name__ == "__main__":

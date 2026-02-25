@@ -12,7 +12,7 @@ class TransformerClassifier(nn.Module):
         freeze_encoder: bool = False,
     ):
         super().__init__()
-        self.encoder = AutoModel.from_pretrained(model_name)
+        self.encoder = AutoModel.from_pretrained(model_name) 
         hidden_size = self.encoder.config.hidden_size
         self.dropout = nn.Dropout(dropout_prob)
         self.classifier = nn.Linear(hidden_size, num_labels)
@@ -21,6 +21,7 @@ class TransformerClassifier(nn.Module):
         if freeze_encoder:
             for param in self.encoder.parameters():
                 param.requires_grad = False
+
 
     def forward(
         self,

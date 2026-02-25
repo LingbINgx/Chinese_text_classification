@@ -16,15 +16,20 @@ import sys
 sys.path.append("..")
 
 from models.scratch_transformer_classifier import ScratchTransformerClassifier
-from utils.scratch_data_loader import build_label_mapping, load_dataframe, prepare_dataloader
+from utils.data_loader import build_label_mapping, load_dataframe, prepare_dataloader, ScratchTextDataset
 from utils.scratch_tokenizer import CharTokenizer
 from utils.evaluate import evaluate
 from utils.train_config import get_config
 from utils.device import to_device
+from utils.wraps import logger_return, save_logger
 
 
+@save_logger
 @logger.catch
 def train(config_path: str | Path = "params/params_scratch.yaml"):
+    
+    logger.info(f"running {Path(__file__).name} with config: {config_path}")
+    
     root_dir = Path(__file__).resolve().parents[1]
     config = get_config(root_dir / config_path, "scratch_transformer")
 
@@ -47,6 +52,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.train_batch_size,
+        dataset_cls=ScratchTextDataset,
         shuffle=True,
     )
     val_loader = prepare_dataloader(
@@ -55,6 +61,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
+        dataset_cls=ScratchTextDataset,
         shuffle=False,
     )
     test_loader = prepare_dataloader(
@@ -63,6 +70,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
+        dataset_cls=ScratchTextDataset,
         shuffle=False,
     )
 
@@ -77,6 +85,10 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         ffn_dim=config.ffn_dim,
         dropout=config.dropout,
     ).to(device)
+    
+    logger.info(f"模型形状: {model}")
+    logger.info(f"模型参数总量: {sum(p.numel() for p in model.parameters())}")
+    logger.info(f"训练设备: {device}")
 
     optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     total_steps = len(train_loader) * config.epochs
@@ -137,7 +149,8 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
     test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="scratch_transformer")
     logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
 
-    tokenizer.save_pretrained(output_dir / "tokenizer")
+    tokenizer.save(output_dir / "tokenizer" / "tokenizer.json")
+    
     with open(output_dir / "scratch_label_mapping.json", "w", encoding="utf-8") as file:
         json.dump({"label2id": label2id, "id2label": id2label}, file, ensure_ascii=False, indent=2)
 

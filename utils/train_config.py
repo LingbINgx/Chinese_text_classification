@@ -2,6 +2,9 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Type, TypeVar, Any
 import yaml
+from loguru import logger
+
+from .wraps import logger_return
 
 T = TypeVar("T", bound="BaseConfig")
 
@@ -84,6 +87,9 @@ TrainConfig_class_map = {
     
 }
     
+    
+@logger_return
+@logger.catch
 def get_config(config_path: str | Path, model_name: str):
      config_class = TrainConfig_class_map.get(model_name)
      if not config_class:

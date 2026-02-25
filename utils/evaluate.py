@@ -1,6 +1,6 @@
 import torch
 from sklearn.metrics import recall_score, f1_score
-from device import to_device
+from .device import to_device
 
 #transformer with bert
 def transformer(model, batch):
@@ -26,7 +26,7 @@ def scartch_transformer(model, batch):
 
 
 
-function_map = {
+evaluate_function_map = {
     "scratch_transformer": scartch_transformer,
     "transformer": transformer,
 }
@@ -44,10 +44,10 @@ def evaluate(model, data_loader, device, model_name=None):
         for batch in data_loader:
             batch = to_device(batch, device)
             
-            if model_name not in function_map:
+            if model_name not in evaluate_function_map:
                 raise ValueError("model_name must be provided for evaluation.")
             
-            loss, logits = function_map[model_name](model, batch)
+            loss, logits = evaluate_function_map[model_name](model, batch)
             
             total_loss += loss * batch["labels"].size(0)
             preds = torch.argmax(logits, dim=1)

@@ -12,7 +12,7 @@ from utils.preprocessing import clean_text, encode_text
 
 
 class TextClassificationDataset(Dataset):
-    def __init__(self, contents, labels, tokenizer, max_length: int):
+    def __init__(self, contents, labels, tokenizer, max_length):
         super().__init__()
         self.contents = [clean_text(item) for item in contents]
         self.labels = labels
@@ -38,6 +38,29 @@ class TextClassificationDataset(Dataset):
 
 
 
+class ScratchTextDataset(Dataset):
+    def __init__(self, contents, labels, tokenizer, max_length):
+        super().__init__()
+        self.contents = [clean_text(item) for item in contents]
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+
+    def __len__(self):
+        return len(self.contents)
+
+    def __getitem__(self, idx):
+        input_ids, attention_mask = self.tokenizer.encode(
+            self.contents[idx],
+            max_length=self.max_length,
+        )
+        return {
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+            "labels": torch.tensor(self.labels[idx], dtype=torch.long),
+        }
+
+
 def load_dataframe(csv_path: str | Path) -> pd.DataFrame:
     frame = pd.read_csv(csv_path)
     required_cols = {"content", "label"}
@@ -53,13 +76,24 @@ def build_label_mapping(train_df: pd.DataFrame):
     return label2id, id2label
 
 
-def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=False):
-    collator = DataCollatorWithPadding(tokenizer)
+def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=False, dataset_cls=TextClassificationDataset):
     labels = [label2id[label] for label in df["label"].tolist()]
-    dataset = TextClassificationDataset(
-        contents=df["content"].tolist(),
-        labels=labels,
-        tokenizer=tokenizer,
-        max_length=max_length,
-    )
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collator)
+    
+    if dataset_cls == TextClassificationDataset:
+        collator = DataCollatorWithPadding(tokenizer=tokenizer, padding="longest")
+        dataset = dataset_cls(
+            contents=df["content"].tolist(),
+            labels=labels,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collator)
+    
+    elif dataset_cls == ScratchTextDataset:
+        dataset = dataset_cls(
+            contents=df["content"].tolist(),
+            labels=labels,
+            tokenizer=tokenizer,
+            max_length=max_length,
+        )
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)

@@ -1,6 +1,15 @@
 
-from pathlib import Path
+from utils.wraps import save_logger
 
-root_dir = Path(__file__).resolve().parents[0]
+from loguru import logger
 
-print(f"{root_dir}")
+
+@save_logger
+def main():
+    logger.info("Hello, World!")
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.error("error message")
+    
+if __name__ == "__main__":
+    main()

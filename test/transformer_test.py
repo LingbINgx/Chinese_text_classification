@@ -1,6 +1,4 @@
-from __future__ import annotations
 
-import argparse
 import json
 import sys
 from pathlib import Path
@@ -12,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_DIR))
 from models.transformer_classifier import TransformerClassifier
 from utils.preprocessing import encode_text
-from utils.train_config import load_config
+from utils.train_config import get_config
 
 
 def _load_label_mapping(output_dir: Path) -> dict[int, str]:
@@ -30,7 +28,7 @@ def _load_label_mapping(output_dir: Path) -> dict[int, str]:
 
 
 def _build_runtime(config_path: str, checkpoint: str | None):
-    config = load_config(ROOT_DIR / config_path)
+    config = get_config(ROOT_DIR / config_path, "transformer")
     output_dir = ROOT_DIR / config.output_dir
     model_path = Path(checkpoint) if checkpoint else output_dir / "best_model.pt"
 
@@ -63,12 +61,12 @@ def _build_runtime(config_path: str, checkpoint: str | None):
 
 
 def predict_one(
-    text: str,
-    model: TransformerClassifier,
+    text,
+    model,
     tokenizer,
-    device: torch.device,
-    id2label: dict[int, str],
-    max_length: int,
+    device,
+    id2label,
+    max_length,
 ):
     encoded = encode_text(text, tokenizer, max_length=max_length)
     batch = {key: value.to(device) for key, value in encoded.items()}
@@ -90,7 +88,7 @@ def predict_one(
 
 def main(text: str | None = None):
     
-    model, tokenizer, device, id2label, max_length = _build_runtime(config_path="params.yaml", checkpoint=None)
+    model, tokenizer, device, id2label, max_length = _build_runtime(config_path="params/params.yaml", checkpoint=None)
 
     if text is not None:
         pred_id, pred_label, conf = predict_one(
@@ -106,5 +104,5 @@ def main(text: str | None = None):
 
 
 if __name__ == "__main__":
-    text = "2006年第一季度，安徽省质量技术监督局组织蜂蜜产品省级监督抽查，共在合肥、亳州、淮北3个市抽查样品31组，经检验，合格23组，抽样合格率为74.2％。主要不合格项目为还原糖、淀粉酶活性、羟甲基糠醛。人为加入蔗糖，使得蔗糖含量超标。蜂蜜中的果糖和葡萄糖都具备还原性，统称为还原糖，它们属于单糖，能被人体直接吸收。蔗糖、麦芽糖同属双糖，蔗糖是非还原性双糖，它们不能被人体直接吸收。蜂蜜中含有的蔗糖是天然花粉中所含有未转化的部分，非人工加入的。此次抽查发现，部分蜂蜜被人为做了手脚，加入了大量蔗糖。淀粉酶值偏低。酶值高低是检测蜂蜜质量优劣的重要指标，酶值高，表明蜂蜜营养价值高。造成酶值低的主要原因有：一是蜂蜜未经充分酿制。未经充分酿制的蜂蜜，其内在质量明显低于成熟蜂蜜；二是经过高温加热处理，加工温度过高，时间过长，会损失蜂蜜营养成分，使蜂蜜色泽加深，羟甲基糠醛升高，酶值降低；三是储藏不当(或过久)的蜂蜜，其酶值也会受到破坏，甚至完全消失，一般气温下，酶含量在17个月内可能降低一半；阳光照射对酶值也有一定影响。另外，掺假掺杂也是酶值降低的一个主要原因，掺入蔗糖的蜂蜜中的酶就要对蔗糖起转化作用，把蔗糖转化成还原糖，从而消耗了蜂蜜中的转化酶，致使酶值下降。羟甲基糠醛值偏高。羟甲基糠醛是蜂蜜中一个重要的质量指标，主要来源于蜂蜜中的还原糖在高温条件下发生的美拉德反应，或者在酸性条件下发生的脱水反应。羟甲基糠醛值过高，说明蜂蜜可能经过了高温处理，或者储藏不当，甚至掺入了大量蔗糖。消费者在选购蜂蜜时，要注意查看产品标签上的生产日期和保质期，选择正规厂家生产的合格产品，并且尽量避免购买价格过低的蜂蜜，以免买到掺假产品。"
+    text = "北京时间3月16日，NBA官方公布了对于灰熊球星贾-莫兰特直播中持枪事件的调查结果灰熊，由于无法确定枪支是否为莫兰特所有，也无法证明他曾持枪到过NBA场馆，因为对他处以禁赛八场的处罚，且此前已禁赛场次将算在禁赛八场的场次内，他最早将在下周复出。"
     main(text)
