@@ -1,14 +1,14 @@
+
 import json
 from dataclasses import dataclass
 from pathlib import Path
-
 import torch
 import yaml
 from loguru import logger
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LambdaLR
 from tqdm import tqdm
-
+from dataclasses import dataclass
 from transformers import get_linear_schedule_with_warmup
 
 import sys
@@ -19,9 +19,31 @@ from models.scratch_transformer_classifier import ScratchTransformerClassifier
 from utils.data_loader import build_label_mapping, load_dataframe, prepare_dataloader, ScratchTextDataset
 from utils.scratch_tokenizer import CharTokenizer
 from utils.evaluate import evaluate
-from utils.train_config import get_config
 from utils.device import to_device
 from utils.wraps import logger_return, save_logger
+from utils.train_config import BaseConfig
+
+
+@dataclass
+class TrainConfig_scratch_transformer(BaseConfig):
+    train_file_path: str
+    val_file_path: str
+    test_file_path: str
+    max_length: int
+    train_batch_size: int
+    eval_batch_size: int
+    learning_rate: float
+    epochs: int
+    output_dir: str
+    weight_decay: float
+    warmup_ratio: float
+    min_freq: int
+    max_vocab_size: int | None
+    embed_dim: int
+    num_heads: int
+    num_layers: int
+    ffn_dim: int
+    dropout: float
 
 
 @save_logger
@@ -31,7 +53,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
     logger.info(f"running {Path(__file__).name} with config: {config_path}")
     
     root_dir = Path(__file__).resolve().parents[1]
-    config = get_config(root_dir / config_path, "scratch_transformer")
+    config = TrainConfig_scratch_transformer.from_yaml(root_dir / config_path)
 
     train_df = load_dataframe(root_dir / config.train_file_path)
     val_df = load_dataframe(root_dir / config.val_file_path)

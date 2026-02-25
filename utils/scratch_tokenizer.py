@@ -108,6 +108,9 @@ class CharTokenizer:
         with open(vocab_path, "r", encoding="utf-8") as file:
             data = json.load(file)
         return cls(vocab=data["vocab"])
+    
+    def __call__(self, *args, **kwds):
+        return self.encode(*args, **kwds)
 
 
 import jieba

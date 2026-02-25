@@ -1,27 +1,29 @@
-
 import json
-from pathlib import Path
-import pandas as pd
-import torch
-import yaml
-from torch.optim import AdamW
-from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 from dataclasses import dataclass
+from pathlib import Path
+
+import torch
 from loguru import logger
+from torch.optim import AdamW
 from tqdm import tqdm
+import yaml
+from transformers import get_linear_schedule_with_warmup
 
 import sys
 sys.path.append("..")
-from models.transformer_classifier import TransformerClassifier
-from utils.data_loader import build_label_mapping, load_dataframe, prepare_dataloader
-from utils.evaluate import evaluate
+
+from models.textcnn_classifier import TextCNNClassifier
+from utils.data_loader import ScratchTextDataset, build_label_mapping, load_dataframe, prepare_dataloader
 from utils.device import to_device
-from utils.wraps import save_logger
+from utils.scratch_tokenizer import CharTokenizer
 from utils.train_config import BaseConfig
+from utils.wraps import save_logger
+from utils.evaluate import evaluate
+
 
 
 @dataclass
-class TrainConfig_transformer(BaseConfig):
+class TrainConfig_textcnn(BaseConfig):
     train_file_path: str
     val_file_path: str
     test_file_path: str
@@ -31,20 +33,25 @@ class TrainConfig_transformer(BaseConfig):
     learning_rate: float
     epochs: int
     output_dir: str
-    model_name: str
     weight_decay: float
+    min_freq: int
+    max_vocab_size: int | None
+    embed_dim: int
+    num_filters: int
+    kernel_sizes: list[int]
+    dropout: float
     warmup_ratio: float
-    dropout_prob: float
-    freeze_encoder: bool
-    
+
+
+
 
 @save_logger
 @logger.catch
-def train(config_path: str | Path = "params/params.yaml"):
+def train(config_path: str | Path = "params/params_textcnn.yaml"):
     logger.info(f"running {Path(__file__).name} with config: {config_path}")
-    
+
     root_dir = Path(__file__).resolve().parents[1]
-    config = TrainConfig_transformer.from_yaml(root_dir / config_path)
+    config = TrainConfig_textcnn.from_yaml(root_dir / config_path)
 
     train_df = load_dataframe(root_dir / config.train_file_path)
     val_df = load_dataframe(root_dir / config.val_file_path)
@@ -52,7 +59,12 @@ def train(config_path: str | Path = "params/params.yaml"):
 
     label2id, id2label = build_label_mapping(train_df)
 
-    tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+    tokenizer = CharTokenizer()
+    tokenizer.build_vocab(
+        texts=train_df["content"].astype(str).tolist(),
+        min_freq=config.min_freq,
+        max_vocab_size=config.max_vocab_size,
+    )
 
     train_loader = prepare_dataloader(
         train_df,
@@ -60,6 +72,7 @@ def train(config_path: str | Path = "params/params.yaml"):
         tokenizer,
         config.max_length,
         config.train_batch_size,
+        dataset_cls=ScratchTextDataset,
         shuffle=True,
     )
     val_loader = prepare_dataloader(
@@ -68,6 +81,8 @@ def train(config_path: str | Path = "params/params.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
+        dataset_cls=ScratchTextDataset,
+        shuffle=False,
     )
     test_loader = prepare_dataloader(
         test_df,
@@ -75,22 +90,27 @@ def train(config_path: str | Path = "params/params.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
+        dataset_cls=ScratchTextDataset,
+        shuffle=False,
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = TransformerClassifier(
-        model_name=config.model_name,
+    model = TextCNNClassifier(
+        vocab_size=tokenizer.vocab_size,
         num_labels=len(label2id),
-        dropout_prob=config.dropout_prob,
-        freeze_encoder=config.freeze_encoder,
+        embed_dim=config.embed_dim,
+        num_filters=config.num_filters,
+        kernel_sizes=tuple(config.kernel_sizes),
+        dropout=config.dropout,
+        padding_idx=tokenizer.pad_id,
     ).to(device)
-    
+
     logger.info(f"模型形状: {model}")
     logger.info(f"模型参数总量: {sum(p.numel() for p in model.parameters())}")
     logger.info(f"训练设备: {device}")
 
     optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
-    
+
     total_steps = len(train_loader) * config.epochs
     warmup_steps = int(total_steps * config.warmup_ratio)
     scheduler = get_linear_schedule_with_warmup(
@@ -101,7 +121,7 @@ def train(config_path: str | Path = "params/params.yaml"):
 
     output_dir = root_dir / config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    best_model_path = output_dir / "best_model.pt"
+    best_model_path = output_dir / "textcnn_best_model.pt"
 
     best_val_f1 = -1.0
     for epoch in range(1, config.epochs + 1):
@@ -110,16 +130,16 @@ def train(config_path: str | Path = "params/params.yaml"):
         total_train_correct = 0
         total_train_count = 0
 
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch}"):
+        for batch in tqdm(train_loader, desc=f"TextCNN Epoch {epoch}"):
             batch = to_device(batch, device)
+
             optimizer.zero_grad()
             loss, logits = model(
                 input_ids=batch["input_ids"],
-                attention_mask=batch["attention_mask"],
-                token_type_ids=batch.get("token_type_ids"),
                 labels=batch["labels"],
             )
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()
 
@@ -131,7 +151,7 @@ def train(config_path: str | Path = "params/params.yaml"):
         train_loss = total_train_loss / max(total_train_count, 1)
         train_acc = total_train_correct / max(total_train_count, 1)
 
-        val_loss, val_acc, val_recall, val_f1 = evaluate(model, val_loader, device, model_name="transformer")
+        val_loss, val_acc, val_recall, val_f1 = evaluate(model, val_loader, device, model_name="textcnn")
         logger.info(
             f"Epoch {epoch}/{config.epochs} | "
             f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f} | "
@@ -143,17 +163,18 @@ def train(config_path: str | Path = "params/params.yaml"):
             torch.save(model.state_dict(), best_model_path)
 
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="transformer")
+    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="textcnn")
     logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
 
-    tokenizer.save_pretrained(output_dir / "tokenizer")
-    with open(output_dir / "label_mapping.json", "w", encoding="utf-8") as file:
+    tokenizer.save(output_dir / "tokenizer" / "tokenizer.json")
+
+    with open(output_dir / "textcnn_label_mapping.json", "w", encoding="utf-8") as file:
         json.dump({"label2id": label2id, "id2label": id2label}, file, ensure_ascii=False, indent=2)
-        
-    with open(output_dir / "config_snapshot.json", "w", encoding="utf-8") as file:
+
+    with open(output_dir / "textcnn_config_snapshot.json", "w", encoding="utf-8") as file:
         json.dump(config.__dict__, file, ensure_ascii=False, indent=2)
 
-    logger.info(f"Transformer {config.model_name} 训练完成，模型已保存到: {output_dir}")
+    logger.info(f"TextCNN 训练完成，模型已保存到: {output_dir}")
 
 
 if __name__ == "__main__":

@@ -25,10 +25,21 @@ def scartch_transformer(model, batch):
     return loss, logits    
 
 
+#textcnn
+def textcnn(model, batch):
+    with torch.no_grad():
+        loss, logits = model(
+            input_ids=batch["input_ids"],
+            labels=batch["labels"],
+        )
+    return loss, logits
+
+
 
 evaluate_function_map = {
     "scratch_transformer": scartch_transformer,
     "transformer": transformer,
+    "textcnn": textcnn,
 }
 
 

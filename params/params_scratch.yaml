@@ -1,12 +1,12 @@
-TRAIN_FILE_PATH: "data/news_train.csv"
-VAL_FILE_PATH: "data/news_test.csv"
-TEST_FILE_PATH: "data/news_test.csv"
+TRAIN_FILE_PATH: "data/cnews.train.csv"
+VAL_FILE_PATH: "data/cnews.val.csv"
+TEST_FILE_PATH: "data/cnews.test.csv"
 MAX_LENGTH: 256
-TRAIN_BATCH_SIZE: 16
+TRAIN_BATCH_SIZE: 32
 EVAL_BATCH_SIZE: 32
 LEARNING_RATE: 3.0e-4
 EPOCHS: 5
-OUTPUT_DIR: "checkpoints/scratch_transformer"
+OUTPUT_DIR: "checkpoints/scratch_transformer_cnews"
 
 WEIGHT_DECAY: 0.01
 

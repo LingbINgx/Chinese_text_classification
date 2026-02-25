@@ -24,13 +24,11 @@ class TextClassificationDataset(Dataset):
 
     def __getitem__(self, idx):
         encoded = encode_text(self.contents[idx], self.tokenizer, self.max_length)
-
         item = {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
             "labels": torch.tensor(self.labels[idx], dtype=torch.long),
         }
-
         if "token_type_ids" in encoded:
             item["token_type_ids"] = encoded["token_type_ids"].squeeze(0)
 
@@ -54,12 +52,13 @@ class ScratchTextDataset(Dataset):
             self.contents[idx],
             max_length=self.max_length,
         )
-        return {
+        item = {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
             "labels": torch.tensor(self.labels[idx], dtype=torch.long),
         }
-
+        return item
+        
 
 def load_dataframe(csv_path: str | Path) -> pd.DataFrame:
     frame = pd.read_csv(csv_path)
@@ -97,3 +96,5 @@ def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=
             max_length=max_length,
         )
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    
+    
