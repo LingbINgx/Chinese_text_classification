@@ -15,7 +15,7 @@ sys.path.append("..")
 from models.textcnn_classifier import TextCNNClassifier
 from utils.data_loader import ScratchTextDataset, build_label_mapping, load_dataframe, prepare_dataloader
 from utils.device import to_device
-from utils.scratch_tokenizer import CharTokenizer
+from utils.scratch_tokenizer import CharTokenizer, WordTokenizer
 from utils.train_config import BaseConfig
 from utils.wraps import save_logger
 from utils.evaluate import evaluate
@@ -59,7 +59,8 @@ def train(config_path: str | Path = "params/params_textcnn.yaml"):
 
     label2id, id2label = build_label_mapping(train_df)
 
-    tokenizer = CharTokenizer()
+    #tokenizer = CharTokenizer()
+    tokenizer = WordTokenizer() 
     tokenizer.build_vocab(
         texts=train_df["content"].astype(str).tolist(),
         min_freq=config.min_freq,

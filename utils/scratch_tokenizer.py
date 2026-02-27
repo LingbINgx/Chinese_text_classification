@@ -109,8 +109,8 @@ class CharTokenizer:
             data = json.load(file)
         return cls(vocab=data["vocab"])
     
-    def __call__(self, *args, **kwds):
-        return self.encode(*args, **kwds)
+    def __call__(self, *args, **kwargs):
+        return self.encode(*args, **kwargs)
 
 
 import jieba
@@ -137,7 +137,7 @@ class WordTokenizer(CharTokenizer):
         base_size = 4
         if max_vocab_size is not None:
             limit = max(max_vocab_size - base_size, 0)
-            tokens = tokens[:max(max_vocab_size, 0)]
+            tokens = tokens[:limit]
 
         self.vocab = {
             self.PAD: 0,

@@ -1,17 +1,37 @@
 
-from pathlib import Path
-
+import re
 import pandas as pd
 import torch
+
+from pathlib import Path
 from torch.utils.data import DataLoader, Dataset
 from transformers import DataCollatorWithPadding
 
-import sys
-sys.path.append("..")
-from utils.preprocessing import clean_text, encode_text
 
 
-class TextClassificationDataset(Dataset):
+def clean_text(text: str):
+    text = str(text)
+    text = re.sub(r'<.*?>', '', text)
+    text = re.sub(r'http\S+|www\S+', '', text)
+    text = re.sub(r'[\t\r]', '', text)
+    text = text.lower()
+    text = re.sub(r' +', ' ', text)
+
+    return text.strip()
+
+def encode_text(text: str, tokenizer, max_length: int = 256):
+    text = clean_text(text)
+    return tokenizer(
+        text,
+        truncation=True,
+        padding=False,
+        max_length=max_length,
+        return_tensors="pt",
+    )
+
+
+class TransformerTextDataset(Dataset):
+    # 这使用预训练Transformer模型
     def __init__(self, contents, labels, tokenizer, max_length):
         super().__init__()
         self.contents = [clean_text(item) for item in contents]
@@ -37,6 +57,7 @@ class TextClassificationDataset(Dataset):
 
 
 class ScratchTextDataset(Dataset):
+    # 使用从头训练的文本分类模型
     def __init__(self, contents, labels, tokenizer, max_length):
         super().__init__()
         self.contents = [clean_text(item) for item in contents]
@@ -75,10 +96,10 @@ def build_label_mapping(train_df: pd.DataFrame):
     return label2id, id2label
 
 
-def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=False, dataset_cls=TextClassificationDataset):
+def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=False, dataset_cls=TransformerTextDataset):
     labels = [label2id[label] for label in df["label"].tolist()]
     
-    if dataset_cls == TextClassificationDataset:
+    if dataset_cls == TransformerTextDataset:
         collator = DataCollatorWithPadding(tokenizer=tokenizer, padding="longest")
         dataset = dataset_cls(
             contents=df["content"].tolist(),
