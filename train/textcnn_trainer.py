@@ -59,8 +59,8 @@ def train(config_path: str | Path = "params/params_textcnn.yaml"):
 
     label2id, id2label = build_label_mapping(train_df)
 
-    #tokenizer = CharTokenizer()
-    tokenizer = WordTokenizer() 
+    tokenizer = CharTokenizer()
+    #tokenizer = WordTokenizer() 
     tokenizer.build_vocab(
         texts=train_df["content"].astype(str).tolist(),
         min_freq=config.min_freq,
@@ -73,7 +73,7 @@ def train(config_path: str | Path = "params/params_textcnn.yaml"):
         tokenizer,
         config.max_length,
         config.train_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=True,
     )
     val_loader = prepare_dataloader(
@@ -82,7 +82,7 @@ def train(config_path: str | Path = "params/params_textcnn.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=False,
     )
     test_loader = prepare_dataloader(
@@ -91,7 +91,7 @@ def train(config_path: str | Path = "params/params_textcnn.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=False,
     )
 

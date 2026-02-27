@@ -54,6 +54,16 @@ class TransformerTextDataset(Dataset):
 
         return item
 
+    def get_data_loader(self, batch_size, shuffle=False):
+        collator = DataCollatorWithPadding(tokenizer=self.tokenizer, padding="longest")
+        dataset = self.__class__(
+            contents=self.contents,
+            labels=self.labels,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+        )
+        res = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collator)
+        return res
 
 
 class ScratchTextDataset(Dataset):
@@ -79,6 +89,16 @@ class ScratchTextDataset(Dataset):
             "labels": torch.tensor(self.labels[idx], dtype=torch.long),
         }
         return item
+    
+    def get_data_loader(self, batch_size, shuffle=False): 
+        dataset = self.__class__(
+            contents=self.contents,
+            labels=self.labels,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+        )
+        res = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        return res
         
 
 def load_dataframe(csv_path: str | Path) -> pd.DataFrame:
@@ -96,26 +116,21 @@ def build_label_mapping(train_df: pd.DataFrame):
     return label2id, id2label
 
 
-def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size, shuffle=False, dataset_cls=TransformerTextDataset):
+def prepare_dataloader(df, label2id, tokenizer, max_length, batch_size,  dataset_cls="transformer", shuffle=False):
     labels = [label2id[label] for label in df["label"].tolist()]
     
-    if dataset_cls == TransformerTextDataset:
-        collator = DataCollatorWithPadding(tokenizer=tokenizer, padding="longest")
-        dataset = dataset_cls(
-            contents=df["content"].tolist(),
-            labels=labels,
-            tokenizer=tokenizer,
-            max_length=max_length,
-        )
-        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collator)
+    dataset_map = {
+        "transformer": TransformerTextDataset,
+        "scratch": ScratchTextDataset,
+    }
+    if dataset_cls not in dataset_map:
+        raise ValueError(f"Unknown dataset_cls: {dataset_cls}")
+    dataset_cls = dataset_map[dataset_cls]
     
-    elif dataset_cls == ScratchTextDataset:
-        dataset = dataset_cls(
-            contents=df["content"].tolist(),
-            labels=labels,
-            tokenizer=tokenizer,
-            max_length=max_length,
-        )
-        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-    
-    
+    res = dataset_cls(
+        contents=df["content"].tolist(),
+        labels=labels,
+        tokenizer=tokenizer,
+        max_length=max_length,
+    ).get_data_loader(batch_size=batch_size, shuffle=shuffle) 
+    return res

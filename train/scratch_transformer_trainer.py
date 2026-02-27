@@ -74,7 +74,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.train_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=True,
     )
     val_loader = prepare_dataloader(
@@ -83,7 +83,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=False,
     )
     test_loader = prepare_dataloader(
@@ -92,7 +92,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         tokenizer,
         config.max_length,
         config.eval_batch_size,
-        dataset_cls=ScratchTextDataset,
+        dataset_cls="scratch",
         shuffle=False,
     )
 
