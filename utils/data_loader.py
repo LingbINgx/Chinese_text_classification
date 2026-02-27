@@ -31,7 +31,7 @@ def encode_text(text: str, tokenizer, max_length: int = 256):
 
 
 class TransformerTextDataset(Dataset):
-    # 这使用预训练Transformer模型
+    '''这使用预训练Transformer模型''' 
     def __init__(self, contents, labels, tokenizer, max_length):
         super().__init__()
         self.contents = [clean_text(item) for item in contents]
@@ -67,7 +67,7 @@ class TransformerTextDataset(Dataset):
 
 
 class ScratchTextDataset(Dataset):
-    # 使用从头训练的文本分类模型
+    '''使用从头训练的文本分类模型''' 
     def __init__(self, contents, labels, tokenizer, max_length):
         super().__init__()
         self.contents = [clean_text(item) for item in contents]
@@ -101,12 +101,11 @@ class ScratchTextDataset(Dataset):
         return res
         
 
-def load_dataframe(csv_path: str | Path) -> pd.DataFrame:
+def load_dataframe(csv_path: str | Path, required_cols: set[str]={"content", "label"}) -> pd.DataFrame:
     frame = pd.read_csv(csv_path)
-    required_cols = {"content", "label"}
     if not required_cols.issubset(frame.columns):
         raise ValueError(f"{csv_path} 缺少必须字段: {required_cols}")
-    return frame[["content", "label"]].dropna()
+    return frame[list(required_cols)].dropna()
 
 
 def build_label_mapping(train_df: pd.DataFrame):

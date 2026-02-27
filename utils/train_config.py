@@ -8,13 +8,13 @@ from .wraps import logger_return
 
 T = TypeVar("T", bound="BaseConfig")
 
+@dataclass
 class BaseConfig:
     @staticmethod
     def _lowercase_keys(obj: Any):
         if isinstance(obj, dict):
             return {
-                str(k).lower(): BaseConfig._lowercase_keys(v)
-                for k, v in obj.items()
+                str(k).lower(): BaseConfig._lowercase_keys(v) for k, v in obj.items()
             }
         elif isinstance(obj, list):
             return [BaseConfig._lowercase_keys(i) for i in obj]

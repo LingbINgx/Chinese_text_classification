@@ -57,7 +57,7 @@ class CharTokenizer:
         min_freq: int = 1,
         max_vocab_size: int | None = 12000,
     ):
-        counter = Counter()
+        counter = Counter() # 计数类，统计字符频率
         for text in texts:
             text = clean_text(text)
             counter.update(list(text))
@@ -79,7 +79,6 @@ class CharTokenizer:
         for token, _ in tokens:
             if token not in self.vocab:
                 self.vocab[token] = len(self.vocab)
-
         self.id2token = {idx: token for token, idx in self.vocab.items()}
 
     def encode(self, text: str, max_length: int) -> tuple[list[int], list[int]]:
@@ -92,7 +91,7 @@ class CharTokenizer:
             padding_len = max_length - len(token_ids)
             token_ids += [self.pad_id] * padding_len
         else:
-            token_ids = token_ids[:max_length]
+            token_ids = token_ids[:max_length-1] + [self.sep_id]
 
         attention_mask = [1 if idx != self.pad_id else 0 for idx in token_ids]
         return token_ids, attention_mask
@@ -111,6 +110,10 @@ class CharTokenizer:
     
     def __call__(self, *args, **kwargs):
         return self.encode(*args, **kwargs)
+    
+    def decode(self, token_ids: list[int]) -> str:
+        tokens = [self.id2token.get(idx, self.UNK) for idx in token_ids]
+        return "".join(tokens).replace(self.CLS, "").replace(self.SEP, "").replace(self.PAD, "")
 
 
 import jieba
@@ -157,18 +160,14 @@ class WordTokenizer(CharTokenizer):
 
         content_limit = max(max_length - 2, 0)
 
-        token_ids = [
-            self.vocab.get(w, self.unk_id)
-            for w in words[:content_limit]
-        ]
-
+        token_ids = [self.vocab.get(w, self.unk_id) for w in words[:content_limit]]
         token_ids = [self.cls_id] + token_ids + [self.sep_id]
 
         if len(token_ids) < max_length:
             pad_len = max_length - len(token_ids)
             token_ids += [self.pad_id] * pad_len
         else:
-            token_ids = token_ids[:max_length]
+            token_ids = token_ids[:max_length-1] + [self.sep_id]
 
         attention_mask = [1 if t != self.pad_id else 0 for t in token_ids]
 
