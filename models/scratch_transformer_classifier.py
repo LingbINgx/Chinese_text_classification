@@ -17,6 +17,7 @@ class ScratchTransformerClassifier(nn.Module):
         super().__init__()
         self.token_embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
         self.position_embedding = nn.Embedding(max_length, embed_dim)
+        self.embed_layer_norm = nn.LayerNorm(embed_dim)
         self.dropout = nn.Dropout(dropout)
 
         encoder_layer = nn.TransformerEncoderLayer(
@@ -26,6 +27,7 @@ class ScratchTransformerClassifier(nn.Module):
             dropout=dropout,
             batch_first=True,
             activation="gelu",
+            norm_first=True,
         )
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
@@ -35,9 +37,10 @@ class ScratchTransformerClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask, labels=None):
         batch_size, seq_len = input_ids.size()
-        positions = torch.arange(seq_len, device=input_ids.device).unsqueeze(0).expand(batch_size, seq_len)
+        positions = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)
 
         x = self.token_embedding(input_ids) + self.position_embedding(positions)
+        x = self.embed_layer_norm(x)
         x = self.dropout(x)
 
         src_key_padding_mask = attention_mask == 0
