@@ -34,12 +34,22 @@ def textcnn(model, batch):
         )
     return loss, logits
 
+#textrnn
+def textrnn(model, batch):
+    with torch.no_grad():
+        loss, logits = model(
+            input_ids=batch["input_ids"],
+            labels=batch["labels"],
+        )
+    return loss, logits
+
 
 
 evaluate_function_map = {
     "scratch_transformer": scartch_transformer,
     "transformer": transformer,
     "textcnn": textcnn,
+    "textrnn": textrnn,
 }
 
 
