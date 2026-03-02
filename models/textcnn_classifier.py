@@ -25,6 +25,7 @@ class TextCNNClassifier(nn.Module):
                 for kernel_size in kernel_sizes
             ]
         )
+        self.max_pool = nn.AdaptiveMaxPool2d((1, 1))
         self.dropout = nn.Dropout(dropout)
         self.classifier = nn.Linear(num_filters * len(kernel_sizes), num_labels)
         self.loss_fn = nn.CrossEntropyLoss()
@@ -35,8 +36,9 @@ class TextCNNClassifier(nn.Module):
 
         conv_outputs = []
         for conv in self.convs:
-            feature = torch.relu(conv(x)).squeeze(3)
-            pooled = torch.max(feature, dim=2).values
+            feature = torch.relu(conv(x))#.squeeze(3)
+            #pooled = torch.max(feature, dim=2).values
+            pooled = self.max_pool(feature).squeeze(3).squeeze(2)
             conv_outputs.append(pooled)
 
         features = torch.cat(conv_outputs, dim=1)
