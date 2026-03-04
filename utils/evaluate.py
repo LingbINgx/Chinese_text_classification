@@ -1,6 +1,7 @@
 import torch
 from sklearn.metrics import recall_score, f1_score
 from .device import to_device
+from .plot import plot_confusion_matrix
 
 #transformer with bert
 def transformer(model, batch):
@@ -53,7 +54,7 @@ evaluate_function_map = {
 }
 
 
-def evaluate(model, data_loader, device, model_name=None):
+def evaluate(model, data_loader, device, model_name=None, plt_confusion_matrix=False, labels=None):
     model.eval()
     total_loss = 0.0
     total_correct = 0
@@ -81,4 +82,7 @@ def evaluate(model, data_loader, device, model_name=None):
     accuracy = total_correct / max(total_count, 1)
     recall = recall_score(all_labels, all_preds, average='macro')
     f1 = f1_score(all_labels, all_preds, average="macro")
+    
+    if plt_confusion_matrix:
+        plot_confusion_matrix(all_labels, all_preds, labels=labels)
     return avg_loss, accuracy, recall, f1

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Type, TypeVar, Any
 import yaml
 from loguru import logger
+import json
 
 from .wraps import logger_return
 
@@ -37,7 +38,26 @@ class BaseConfig:
 
         return cls(**data)
 
+
+    @classmethod
+    @logger_return
+    def from_json(cls: Type[T], path: str | Path) -> T:
+        path = Path(path)
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        data = cls._lowercase_keys(data)
+
+        valid_fields = {f.name for f in fields(cls)}
+        unknown = set(data.keys()) - valid_fields
+        if unknown:
+            raise ValueError(f"Unknown config fields: {unknown}")
+
+        return cls(**data)
+    
+
     def to_dict(self):
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
 
+   
