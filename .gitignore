@@ -14,4 +14,6 @@ wheels/
 *.txt
 *.log
 
+test.py
+
 checkpoints/
