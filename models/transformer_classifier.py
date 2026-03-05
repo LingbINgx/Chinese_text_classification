@@ -17,10 +17,17 @@ class TransformerClassifier(nn.Module):
         self.dropout = nn.Dropout(dropout_prob)
         self.classifier = nn.Linear(hidden_size, num_labels)
         self.loss_fn = nn.CrossEntropyLoss()
+        self._init_classifier()
 
         if freeze_encoder:
             for param in self.encoder.parameters():
                 param.requires_grad = False
+
+    def _init_classifier(self):
+        init_std = getattr(self.encoder.config, "initializer_range", 0.02)
+        nn.init.normal_(self.classifier.weight, mean=0.0, std=init_std)
+        if self.classifier.bias is not None:
+            nn.init.zeros_(self.classifier.bias)
 
 
     def forward(

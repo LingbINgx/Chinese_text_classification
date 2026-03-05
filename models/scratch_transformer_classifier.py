@@ -39,14 +39,22 @@ class ScratchTransformerClassifier(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss()
         
         self.apply(self._init_weights)
+        nn.init.trunc_normal_(self.cls_token, mean=0.0, std=0.02, a=-0.04, b=0.04)
     
     def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        if isinstance(module, nn.MultiheadAttention):
+            nn.init.xavier_uniform_(module.in_proj_weight)
+            if module.in_proj_bias is not None:
+                nn.init.zeros_(module.in_proj_bias)
+            nn.init.xavier_uniform_(module.out_proj.weight)
+            if module.out_proj.bias is not None:
+                nn.init.zeros_(module.out_proj.bias)
+        elif isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
             if module.bias is not None:
                 nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
-            nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            nn.init.normal_(module.weight, mean=0.0, std=module.embedding_dim ** -0.5)
             if module.padding_idx is not None:
                 nn.init.zeros_(module.weight[module.padding_idx])
         elif isinstance(module, nn.LayerNorm):
