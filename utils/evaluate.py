@@ -54,7 +54,7 @@ evaluate_function_map = {
 }
 
 
-def evaluate(model, data_loader, device, model_name=None, plt_confusion_matrix=False, labels=None):
+def evaluate(model, data_loader, device, model_name: str, plt_confusion_matrix=False, labels=None):
     model.eval()
     total_loss = 0.0
     total_correct = 0
@@ -84,5 +84,5 @@ def evaluate(model, data_loader, device, model_name=None, plt_confusion_matrix=F
     f1 = f1_score(all_labels, all_preds, average="macro")
     
     if plt_confusion_matrix:
-        plot_confusion_matrix(all_labels, all_preds, labels=labels)
+        plot_confusion_matrix(all_labels, all_preds, labels=labels, title=model_name)
     return avg_loss, accuracy, recall, f1
