@@ -172,3 +172,19 @@ class WordTokenizer(CharTokenizer):
         attention_mask = [1 if t != self.pad_id else 0 for t in token_ids]
 
         return token_ids, attention_mask
+
+
+
+if __name__ == "__main__":
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
+    from utils.data_loader import ScratchTextDataset, build_label_mapping, load_dataframe, prepare_dataloader
+    tokenizer = CharTokenizer()
+    train_df = load_dataframe("../data/cnews.train.csv")
+    tokenizer.build_vocab(
+        texts=train_df["content"].astype(str).tolist(),
+        min_freq=2,
+        max_vocab_size=20000,
+    )
+    
+    tokenizer.save("../tmp/char_tokenizer.json")

@@ -162,7 +162,7 @@ def train(config_path: str | Path = "params/params_textrnn.yaml"):
             torch.save(model.state_dict(), best_model_path)
 
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="textrnn")
+    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="textrnn", plt_confusion_matrix=True, labels=list(label2id.keys()))
     logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
 
     tokenizer.save(output_dir / "tokenizer" / "tokenizer.json")
@@ -170,10 +170,10 @@ def train(config_path: str | Path = "params/params_textrnn.yaml"):
     with open(output_dir / "textrnn_label_mapping.json", "w", encoding="utf-8") as file:
         json.dump({"label2id": label2id, "id2label": id2label}, file, ensure_ascii=False, indent=2)
 
-    with open(output_dir / "textcnn_config_snapshot.json", "w", encoding="utf-8") as file:
+    with open(output_dir / "textrnn_config_snapshot.json", "w", encoding="utf-8") as file:
         json.dump(config.__dict__, file, ensure_ascii=False, indent=2)
 
-    logger.info(f"TextCNN 训练完成，模型已保存到: {output_dir}")
+    logger.info(f"TextRNN 训练完成，模型已保存到: {output_dir}")
 
 
 if __name__ == "__main__":

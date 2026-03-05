@@ -17,3 +17,5 @@ wheels/
 test.py
 
 checkpoints/
+
+tmp/

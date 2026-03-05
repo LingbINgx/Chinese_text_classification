@@ -143,7 +143,7 @@ def train(config_path: str | Path = "params/params.yaml"):
             torch.save(model.state_dict(), best_model_path)
 
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="transformer")
+    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="transformer", plt_confusion_matrix=True, labels=list(label2id.keys()))
     logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
 
     tokenizer.save_pretrained(output_dir / "tokenizer")
