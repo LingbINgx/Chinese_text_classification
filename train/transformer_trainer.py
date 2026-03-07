@@ -18,7 +18,7 @@ from utils.evaluate import evaluate
 from utils.device import to_device
 from utils.wraps import save_logger
 from utils.train_config import BaseConfig
-
+from utils.timer import Timer
 
 @dataclass
 class TrainConfig_transformer(BaseConfig):
@@ -104,7 +104,12 @@ def train(config_path: str | Path = "params/params.yaml"):
     best_model_path = output_dir / "best_model.pt"
 
     best_val_f1 = -1.0
+    
+    timer = Timer()
+    
     for epoch in range(1, config.epochs + 1):
+        timer.start()
+        
         model.train()
         total_train_loss = 0.0
         total_train_correct = 0
@@ -132,6 +137,11 @@ def train(config_path: str | Path = "params/params.yaml"):
         train_acc = total_train_correct / max(total_train_count, 1)
 
         val_loss, val_acc, val_recall, val_f1 = evaluate(model, val_loader, device, model_name="transformer")
+        
+        t = timer.stop()
+        
+        logger.info(f"Epoch {epoch} completed in {t:.2f} seconds.")
+        
         logger.info(
             f"Epoch {epoch}/{config.epochs} | "
             f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f} | "
