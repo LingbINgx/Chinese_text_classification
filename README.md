@@ -1,8 +1,10 @@
 # Chinese Text Classification
 
-本项目使用 Transformer（默认 `bert-base-chinese`）完成中文文本分类任务。
+本项目使用 **深度学习** 完成中文文本分类任务。
 
 ## 快速开始
+
+本项目使用 uv 构建
 
 ```bash
 pip install -e .
