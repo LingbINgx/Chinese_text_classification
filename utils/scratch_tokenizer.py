@@ -180,10 +180,10 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).resolve().parents[1]))
     from utils.data_loader import ScratchTextDataset, build_label_mapping, load_dataframe, prepare_dataloader
     tokenizer = CharTokenizer()
-    train_df = load_dataframe("../data/cnews.train.csv")
+    train_df = load_dataframe("../data/train.csv")
     tokenizer.build_vocab(
         texts=train_df["content"].astype(str).tolist(),
-        min_freq=2,
+        min_freq=5,
         max_vocab_size=20000,
     )
     
