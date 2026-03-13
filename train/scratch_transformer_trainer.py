@@ -124,7 +124,7 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
 
     output_dir = root_dir / config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    best_model_path = output_dir / "scratch_best_model.pt"
+    best_model_path = output_dir / "scratch.pt"
 
     best_val_f1 = -1.0
     global_step = 0
@@ -161,15 +161,15 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
         train_loss = total_train_loss / max(total_train_count, 1)
         train_acc = total_train_correct / max(total_train_count, 1)
 
-        val_loss, val_acc, val_recall, val_f1 = evaluate(model, val_loader, device, model_name="scratch_transformer")
+        val_loss, val_acc, val_recall, val_f1, val_micro_f1 = evaluate(model, val_loader, device, model_name="scratch_transformer")
         
         t = timer.stop()   
         logger.info(f"Epoch {epoch} completed in {t:.2f} seconds.")
         
         logger.info(
             f"Epoch {epoch}/{config.epochs} | "
-            f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f} | "
-            f"val_loss={val_loss:.4f}, val_acc={val_acc:.4f}, val_recall={val_recall:.4f}, val_f1={val_f1:.4f}"
+            f"train_loss={train_loss:.8f}, train_acc={train_acc:.8f} | "
+            f"val_loss={val_loss:.8f}, val_acc={val_acc:.8f}, val_recall={val_recall:.8f}, val_f1={val_f1:.8f}, val_micro_f1={val_micro_f1:.8f}"
         )
 
         if val_f1 > best_val_f1:
@@ -177,9 +177,9 @@ def train(config_path: str | Path = "params/params_scratch.yaml"):
             torch.save(model.state_dict(), best_model_path)
 
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="scratch_transformer", plt_confusion_matrix=True, labels=list(label2id.keys()))
+    test_loss, test_acc, test_recall, test_f1, test_micro_f1 = evaluate(model, test_loader, device, model_name="scratch_transformer", plt_confusion_matrix=True, labels=list(label2id.keys()))
     
-    logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
+    logger.info(f"Test | loss={test_loss:.8f}, acc={test_acc:.8f}, recall={test_recall:.8f}, f1={test_f1:.8f}, micro_f1={test_micro_f1:.8f}")
 
     tokenizer.save(output_dir / "tokenizer" / "tokenizer.json")
     

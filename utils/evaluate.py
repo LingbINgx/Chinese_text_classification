@@ -81,8 +81,9 @@ def evaluate(model, data_loader, device, model_name: str, plt_confusion_matrix=F
     avg_loss = total_loss / max(total_count, 1)
     accuracy = total_correct / max(total_count, 1)
     recall = recall_score(all_labels, all_preds, average='macro')
-    f1 = f1_score(all_labels, all_preds, average="macro")
+    macro_f1 = f1_score(all_labels, all_preds, average="macro")
+    micro_f1 = f1_score(all_labels, all_preds, average="micro")
     
     if plt_confusion_matrix:
         plot_confusion_matrix(all_labels, all_preds, labels=labels, title=model_name)
-    return avg_loss, accuracy, recall, f1
+    return avg_loss, accuracy, recall, macro_f1, micro_f1

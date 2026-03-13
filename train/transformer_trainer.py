@@ -101,7 +101,7 @@ def train(config_path: str | Path = "params/params.yaml"):
 
     output_dir = root_dir / config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    best_model_path = output_dir / "best_model.pt"
+    best_model_path = output_dir / "transformer.pt"
 
     best_val_f1 = -1.0
     
@@ -136,7 +136,7 @@ def train(config_path: str | Path = "params/params.yaml"):
         train_loss = total_train_loss / max(total_train_count, 1)
         train_acc = total_train_correct / max(total_train_count, 1)
 
-        val_loss, val_acc, val_recall, val_f1 = evaluate(model, val_loader, device, model_name="transformer")
+        val_loss, val_acc, val_recall, val_f1, val_micro_f1 = evaluate(model, val_loader, device, model_name="transformer")
         
         t = timer.stop()
         
@@ -144,8 +144,8 @@ def train(config_path: str | Path = "params/params.yaml"):
         
         logger.info(
             f"Epoch {epoch}/{config.epochs} | "
-            f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f} | "
-            f"val_loss={val_loss:.4f}, val_acc={val_acc:.4f}, val_recall={val_recall:.4f}, val_f1={val_f1:.4f}"
+            f"train_loss={train_loss:.8f}, train_acc={train_acc:.8f} | "
+            f"val_loss={val_loss:.8f}, val_acc={val_acc:.8f}, val_recall={val_recall:.8f}, val_f1={val_f1:.8f}, val_micro_f1={val_micro_f1:.8f}"
         )
 
         if val_f1 > best_val_f1:
@@ -153,8 +153,8 @@ def train(config_path: str | Path = "params/params.yaml"):
             torch.save(model.state_dict(), best_model_path)
 
     model.load_state_dict(torch.load(best_model_path, map_location=device))
-    test_loss, test_acc, test_recall, test_f1 = evaluate(model, test_loader, device, model_name="transformer", plt_confusion_matrix=True, labels=list(label2id.keys()))
-    logger.info(f"Test | loss={test_loss:.4f}, acc={test_acc:.4f}, recall={test_recall:.4f}, f1={test_f1:.4f}")
+    test_loss, test_acc, test_recall, test_f1, test_micro_f1 = evaluate(model, test_loader, device, model_name="transformer", plt_confusion_matrix=True, labels=list(label2id.keys()))
+    logger.info(f"Test | loss={test_loss:.8f}, acc={test_acc:.8f}, recall={test_recall:.8f}, f1={test_f1:.8f}, micro_f1={test_micro_f1:.8f}")
 
     tokenizer.save_pretrained(output_dir / "tokenizer")
     with open(output_dir / "label_mapping.json", "w", encoding="utf-8") as file:
@@ -163,7 +163,7 @@ def train(config_path: str | Path = "params/params.yaml"):
     with open(output_dir / "config_snapshot.json", "w", encoding="utf-8") as file:
         json.dump(config.__dict__, file, ensure_ascii=False, indent=2)
 
-    logger.info(f"Transformer {config.model_name} 训练完成，模型已保存到: {output_dir}")
+    logger.info(f"Transformer 训练完成，模型已保存到: {output_dir}")
 
 
 if __name__ == "__main__":
