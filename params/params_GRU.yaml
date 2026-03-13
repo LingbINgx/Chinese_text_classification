@@ -1,0 +1,23 @@
+train_file_path: "data/cnews.train.csv"
+val_file_path: "data/cnews.val.csv"
+test_file_path: "data/cnews.test.csv"
+max_length: 256
+train_batch_size: 64
+eval_batch_size: 128
+learning_rate: 1.0e-3
+epochs: 8
+output_dir: "checkpoints/textGRU"
+
+weight_decay: 0.01
+warmup_ratio: 0.1
+
+min_freq: 2
+max_vocab_size: 12000
+
+embed_dim: 256
+hidden_dim: 256
+num_layers: 4
+
+bidirectional: false
+
+dropout: 0.1
