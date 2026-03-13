@@ -9,4 +9,6 @@ python textcnn_trainer.py
 
 python textrnn_trainer.py
 
+python GRU_trainer.py
+
 python transformer_trainer.py

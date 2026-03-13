@@ -4,13 +4,16 @@ from collections import Counter
 from pathlib import Path
 import logging
 
-def clean_text(text: str) -> str:
+def clean_text(text: str):
     text = str(text)
-    text = re.sub(r"<.*?>", "", text)
-    text = re.sub(r"http\S+|www\S+", "", text)
-    text = re.sub(r"[\t\r]", "", text)
+    text = re.sub(r'<.*?>', '', text)
+    text = re.sub(r'http\S+|www\S+', '', text)
+    text = re.sub(r'[\t\r]', '', text)
     text = text.lower()
-    text = re.sub(r" +", " ", text)
+    text = re.sub(r' +', ' ', text)
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+
     return text.strip()
 
 
